@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101827">
+<meta name="description" content="A modern electricity bill estimator for home and shop usage.">
+<title>current.calc — EB Bill Estimator</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+:root{--bg:#f4f7fb;--ink:#111c2e;--muted:#68758a;--navy:#101827;--green:#c8f169;--green-dark:#addf4e;--line:#e6ebf2;--card:#fff;--shadow:0 18px 55px rgba(17,28,46,.08);--radius:23px}
+*{box-sizing:border-box}html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;min-width:320px;overflow-x:hidden;background:var(--bg);color:var(--ink);font-family:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased}
+button,input{font:inherit}button{cursor:pointer;touch-action:manipulation}
+.topbar{height:76px;display:flex;align-items:center;max-width:1120px;margin:auto;padding:0 26px}
+.brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:inherit}
+.brand-mark{width:40px;height:40px;border-radius:14px;display:grid;place-items:center;background:var(--green);color:var(--navy);font-size:23px;font-weight:800;box-shadow:0 5px 14px rgba(200,241,105,.24)}
+.brand-name{font-family:Manrope,sans-serif;font-size:19px;font-weight:800;letter-spacing:-.7px}.brand-name span{color:#788499;font-weight:600}
+.hero{background:var(--navy);color:white;position:relative;isolation:isolate;padding:54px 26px 116px;border-radius:0 0 32px 32px}
+.hero:before{content:"";position:absolute;z-index:-1;width:440px;height:440px;right:-100px;top:-230px;border-radius:50%;background:radial-gradient(circle,rgba(200,241,105,.16),transparent 70%)}
+.hero-inner{max-width:1068px;margin:auto}.eyebrow{display:flex;align-items:center;gap:9px;color:var(--green);text-transform:uppercase;letter-spacing:1.7px;font-size:11px;font-weight:800;margin-bottom:17px}.eyebrow:before{content:"";width:24px;height:2px;background:var(--green);border-radius:4px}
+h1{max-width:700px;margin:0;font-family:Manrope,sans-serif;font-size:clamp(36px,5.2vw,60px);line-height:1.08;letter-spacing:-2.5px;font-weight:800}h1 em{color:var(--green);font-style:normal}
+.hero-copy{max-width:570px;margin:18px 0 0;color:#b3bdcd;font-size:15px;line-height:1.75}
+.main{max-width:1068px;padding:0 26px 48px;margin:-70px auto 0;position:relative;z-index:2}
+.workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.94fr);gap:20px;align-items:stretch}
+.card{min-width:0;background:var(--card);border:1px solid rgba(220,227,237,.8);border-radius:var(--radius);box-shadow:var(--shadow)}
+.calc-card,.result-card{padding:26px}
+.heading{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:23px}
+.kicker{color:#59677d;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;font-weight:800;margin:0 0 8px}
+h2{font-family:Manrope,sans-serif;font-size:22px;letter-spacing:-.6px;margin:0}
+.icon-box{display:grid;place-items:center;flex:0 0 41px;height:41px;border-radius:13px;background:#f1f5e7;color:#48631d;font-size:20px}
+.mode-switch{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;padding:5px;background:#f1f4f8;border:1px solid #e6ebf2;border-radius:15px;margin-bottom:22px}
+.mode-btn{display:flex;align-items:center;justify-content:center;gap:5px;min-width:0;min-height:48px;padding:7px 3px;border:1px solid transparent;border-radius:11px;background:transparent;color:#46546b;font-size:12px;font-weight:800;transition:background .18s,color .18s}
+.mode-btn[aria-pressed="true"]{background:var(--navy);color:white;box-shadow:0 4px 10px rgba(16,24,39,.13)}
+.mode-icon{font-size:17px}
+.label{display:block;color:#5d6a7f;font-size:12px;font-weight:700;margin-bottom:9px}
+.unit-field{display:flex;align-items:center;gap:10px;padding:15px 16px;border:1.5px solid #dfe6ee;border-radius:15px;background:#f8fafc;transition:border-color .2s,box-shadow .2s}
+.unit-field:focus-within{border-color:#9fcf4c;box-shadow:0 0 0 4px rgba(200,241,105,.2)}
+.unit-field input{min-width:0;width:100%;outline:0;border:0;background:transparent;color:var(--ink);font-family:Manrope,sans-serif;font-size:28px;font-weight:800;letter-spacing:-.8px}
+.suffix{color:#7a879a;font-size:12px;font-weight:800;white-space:nowrap}
+.quick-label{display:flex;justify-content:space-between;gap:10px;margin:17px 0 9px;color:#7b8798;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px}
+.quick-units{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.quick-btn{min-width:0;padding:11px 4px;background:white;border:1px solid #e1e7ef;border-radius:10px;color:#49566a;font-size:12px;font-weight:800;transition:.18s}
+.quick-btn:hover,.quick-btn.active{border-color:#a8d64d;background:#f3fadd;color:#33491a}
+.keypad{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:19px}
+.key{min-width:0;min-height:49px;border:1px solid #e4e9f0;border-radius:11px;background:#fff;color:#253248;font-size:16px;font-weight:800}
+.key:hover{background:#f6f8fb;border-color:#cdd7e4}.key:active{transform:scale(.98)}.key.utility{background:#f1f4f8;color:#66748a}
+.shop-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+.shop-fields .unit-field{padding:12px 13px}.shop-fields input{font-size:21px}
+.help-text{margin:9px 0 0;color:#8b96a7;font-size:10px;line-height:1.5}
+.calculate{width:100%;margin-top:18px;min-height:55px;border:0;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:10px;color:#16220b;background:var(--green);font-size:14px;font-weight:800;box-shadow:0 7px 16px rgba(169,223,61,.2);transition:.2s}
+.calculate:hover{background:var(--green-dark);transform:translateY(-1px)}
+.error{min-height:16px;margin-top:9px;color:#c24142;font-size:12px}
+.result-card{background:linear-gradient(155deg,#fff 0%,#fbfdf7 100%)}
+.result-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.estimate-label{color:#53627a;font-size:13px;font-weight:800;margin:2px 0 10px}
+.total{font-family:Manrope,sans-serif;font-size:clamp(32px,4vw,45px);line-height:1.1;font-weight:800;letter-spacing:-1.8px;color:#142238;overflow-wrap:anywhere}
+.badge{display:inline-flex;align-items:center;gap:5px;background:#edf7d9;color:#4e6b1f;border-radius:999px;padding:8px 10px;font-size:9px;font-weight:800;white-space:nowrap}
+.divider{height:1px;background:var(--line);margin:23px 0 18px}
+.breakdown-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.breakdown-title h3{margin:0;font-size:14px;font-weight:800}.breakdown-title span{color:#5d6b82;font-size:11px;font-weight:700}
+.empty{padding:23px 14px;text-align:center;background:#f7f9fc;border:1px dashed #dbe2eb;border-radius:13px;color:#8a96a7;font-size:12px;line-height:1.7}.empty-icon{display:block;margin-bottom:7px;font-size:24px}
+.rows{display:flex;flex-direction:column;gap:0;margin:0;padding:0;list-style:none}.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid #edf0f4}.row:last-child{border-bottom:0}.row-name{color:#34435a;font-size:13px;font-weight:800}.row-detail{margin-top:5px;color:#34435a;font-size:12px;font-weight:750;line-height:1.6}.row-amount{color:#243148;font-size:12px;font-weight:800;white-space:nowrap}.row-amount.free{color:#5d8124}
+.note{margin-top:17px;display:flex;gap:9px;align-items:flex-start;padding:14px;border-radius:12px;background:#f4f7ee;color:#34435a;font-size:13px;font-weight:700;line-height:1.7}.note strong{color:#344b13;font-size:13px;font-weight:900}.note #noteText{color:#34435a;font-size:13px;font-weight:700;line-height:1.7}
+.info-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:20px}.info-card{padding:18px;box-shadow:none}.info-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:#f0f4fa;font-size:16px;margin-bottom:11px}.info-card h3{margin:0 0 6px;font-size:12px}.info-card p{margin:0;color:#43516a;font-size:12px;font-weight:650;line-height:1.65}
+.footer{max-width:1068px;margin:auto;padding:0 26px 25px;display:flex;justify-content:space-between;gap:14px;color:#657187;font-size:11px;font-weight:600;line-height:1.6}.footer strong{color:#657187}
+button:focus-visible,input:focus-visible{outline:3px solid rgba(66,99,235,.45);outline-offset:2px}
+[hidden]{display:none!important}
+@media(max-width:820px){.workspace{grid-template-columns:1fr}.result-card{order:2}.calc-card{order:1}.total{font-size:40px}}
+@media(max-width:560px){
+ .topbar{height:66px;padding:0 16px}.brand-mark{width:36px;height:36px;border-radius:12px}.brand-name{font-size:17px}
+ .hero{padding:38px 18px 98px;border-radius:0 0 25px 25px}h1{font-size:clamp(34px,9.7vw,47px);letter-spacing:-1.8px}.hero-copy{font-size:13px;line-height:1.7}
+ .main{padding:0 12px 32px;margin-top:-59px}.calc-card,.result-card{padding:18px 15px;border-radius:19px}.heading{margin-bottom:19px}h2{font-size:20px}
+ .mode-btn{min-height:48px;font-size:11px;padding:7px 2px;gap:4px}.unit-field{padding:13px}.unit-field input{font-size:26px}.quick-units{gap:6px}.quick-btn{font-size:11px;padding:10px 2px}
+ .keypad{gap:7px}.key{min-height:47px;border-radius:10px}.calculate{min-height:53px}
+ .result-top{display:block}.badge{margin-top:13px}.total{font-size:clamp(32px,9.7vw,39px);letter-spacing:-1.2px}
+ .shop-fields{gap:8px}.shop-fields .unit-field{padding:10px}.shop-fields input{font-size:19px}
+ .row{gap:7px}.row-name{font-size:12px;font-weight:800}.row-amount{font-size:12px;font-weight:800}.row-detail{font-size:11px;font-weight:600;overflow-wrap:anywhere}
+ .info-grid{grid-template-columns:1fr;gap:9px;margin-top:13px}.info-card{display:grid;grid-template-columns:36px minmax(0,1fr);column-gap:11px;padding:14px}.info-icon{grid-row:span 2;margin:0}.info-card h3{align-self:end}
+ .footer{padding:0 16px 22px;flex-direction:column;gap:4px;overflow-wrap:anywhere}
+}
+@media(max-width:360px){.hero{padding-top:32px}h1{font-size:33px}.calc-card,.result-card{padding:15px 12px}.mode-btn{font-size:10px;letter-spacing:-.2px}.quick-btn{font-size:10px}.key{min-height:44px}.total{font-size:30px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="#" aria-label="current.calc home">
+    <span class="brand-mark">ϟ</span><span class="brand-name">current<span>.calc</span></span>
+  </a>
+</header>
+<section class="hero">
+  <div class="hero-inner">
+    <div class="eyebrow">ELECTRICITY BILL ESTIMATOR</div>
+    <h1>Know your bill.<br><em>Plan with confidence.</em></h1>
+    <p class="hero-copy">Estimate electricity charges for your home or shop. Choose a usage type, enter your units, and get a simple bill breakdown.</p>
+  </div>
+</section>
+<main class="main">
+  <div class="workspace">
+    <section class="card calc-card" aria-labelledby="calcTitle">
+      <div class="heading">
+        <div><p class="kicker">YOUR CALCULATOR</p><h2 id="calcTitle">Choose your connection</h2></div>
+        <div class="icon-box" aria-hidden="true">ϟ</div>
+      </div>
+
+      <div class="mode-switch" role="group" aria-label="Calculator type">
+        <button class="mode-btn" id="homeMode" type="button" aria-pressed="true"><span class="mode-icon" aria-hidden="true">⌂</span> Home bill</button>
+        <button class="mode-btn" id="shopMode" type="button" aria-pressed="false"><span class="mode-icon" aria-hidden="true">▣</span> Shop bill</button>
+        <button class="mode-btn" id="reverseMode" type="button" aria-pressed="false"><span class="mode-icon" aria-hidden="true">₹↗</span> Bill → Units</button>
+      </div>
+
+      <label class="label" for="units">Electricity consumed</label>
+      <div class="unit-field">
+        <input id="units" type="number" min="0" max="10000000" step="any" inputmode="decimal" placeholder="0" aria-describedby="unitSuffix">
+        <span class="suffix" id="unitSuffix">UNITS</span>
+      </div>
+      <div class="quick-label"><span>Quick select</span><span>Tap a value</span></div>
+      <div class="quick-units">
+        <button class="quick-btn" type="button" data-quick="100">100</button>
+        <button class="quick-btn" type="button" data-quick="200">200</button>
+        <button class="quick-btn" type="button" data-quick="500">500</button>
+        <button class="quick-btn" type="button" data-quick="1000">1,000</button>
+      </div>
+
+      <div class="keypad" aria-label="Number keypad">
+        <button class="key" type="button" data-key="7">7</button><button class="key" type="button" data-key="8">8</button><button class="key" type="button" data-key="9">9</button><button class="key utility" type="button" data-action="backspace" aria-label="Delete last digit">⌫</button>
+        <button class="key" type="button" data-key="4">4</button><button class="key" type="button" data-key="5">5</button><button class="key" type="button" data-key="6">6</button><button class="key utility" type="button" data-action="clear">AC</button>
+        <button class="key" type="button" data-key="1">1</button><button class="key" type="button" data-key="2">2</button><button class="key" type="button" data-key="3">3</button><button class="key" type="button" data-key=".">.</button>
+        <button class="key" type="button" data-key="0" style="grid-column:span 2">0</button><button class="key" type="button" data-action="clear" style="grid-column:span 2">Clear all</button>
+      </div>
+
+      <div id="shopFields" class="shop-fields" hidden>
+        <div><label class="label" for="shopRate">Shop rate (₹ / unit)</label><div class="unit-field"><input id="shopRate" type="number" min="0" max="100000" step="0.01" value="8" inputmode="decimal"><span class="suffix">₹/UNIT</span></div></div>
+        <div><label class="label" for="fixedCharge">Extra charges (₹)</label><div class="unit-field"><input id="fixedCharge" type="number" min="0" max="10000000" step="0.01" value="0" inputmode="decimal"><span class="suffix">₹</span></div></div>
+        <p class="help-text" style="grid-column:1/-1">Shop rates vary by tariff category and connection. Enter the per-unit rate from your latest bill for a closer estimate.</p>
+      </div>
+
+      <div id="reverseFields" class="shop-fields" hidden>
+        <div style="grid-column:1/-1">
+          <label class="label" for="reverseCategory">Bill type</label>
+          <div class="unit-field"><select id="reverseCategory" style="width:100%;min-width:0;border:0;outline:0;background:transparent;color:var(--ink);font:inherit;font-weight:800"><option value="home">Home / Domestic</option><option value="shop">Shop / Commercial (use your rate)</option></select></div>
+        </div>
+        <div style="grid-column:1/-1">
+          <label class="label" for="paidAmount">Bill amount you paid (₹)</label>
+          <div class="unit-field"><input id="paidAmount" type="number" min="0" max="100000000" step="0.01" value="445" inputmode="decimal"><span class="suffix">₹ PAID</span></div>
+        </div>
+        <div id="reverseShopRateWrap" hidden><label class="label" for="reverseShopRate">Shop rate (₹ / unit)</label><div class="unit-field"><input id="reverseShopRate" type="number" min="0.01" max="100000" step="0.01" value="8" inputmode="decimal"><span class="suffix">₹/UNIT</span></div></div>
+        <div id="reverseExtraWrap" hidden><label class="label" for="reverseExtra">Other charges (₹)</label><div class="unit-field"><input id="reverseExtra" type="number" min="0" max="10000000" step="0.01" value="0" inputmode="decimal"><span class="suffix">₹</span></div></div>
+        <p class="help-text" style="grid-column:1/-1">The result separates free units, paid units, total estimated units and energy charges. Actual EB bills may include fixed charges, subsidies or adjustments.</p>
+      </div>
+      <button class="calculate" id="calculate" type="button"><span id="calculateText">Calculate my bill</span><span aria-hidden="true">↗</span></button>
+      <div class="error" id="error" role="status" aria-live="polite"></div>
+    </section>
+
+    <section class="card result-card" aria-labelledby="resultHeading">
+      <div class="result-top">
+        <div><p class="kicker" id="resultKicker">HOME ESTIMATE</p><h2 class="estimate-label" id="resultHeading">Estimated bill</h2><div class="total" id="total" aria-live="polite">₹0.00</div></div>
+        <span class="badge">✦ ESTIMATE ONLY</span>
+      </div>
+      <div class="divider"></div>
+      <div class="breakdown-title"><h3>Bill breakdown</h3><span id="summary">Waiting for units</span></div>
+      <div class="empty" id="empty"><span class="empty-icon">▤</span>Your bill details will appear here.<br>Enter units and calculate to get started.</div>
+      <ul class="rows" id="rows" hidden></ul>
+      <div class="note"><span aria-hidden="true">ⓘ</span><div><strong>Important</strong><br><span id="noteText">Home rates shown are illustrative and based on the reference example. Official bills may include subsidies or adjustments.</span></div></div>
+    </section>
+  </div>
+  <section class="info-grid" aria-label="Calculator features">
+    <article class="card info-card"><div class="info-icon" aria-hidden="true">⚡</div><h3>Quick estimate</h3><p>Use quick-select values or the keypad to enter units in seconds.</p></article>
+    <article class="card info-card"><div class="info-icon" aria-hidden="true">▤</div><h3>Clear breakdown</h3><p>See how each slab or your entered shop rate contributes to the estimate.</p></article>
+    <article class="card info-card"><div class="info-icon" aria-hidden="true">▣</div><h3>Home & shop</h3><p>Switch connection type and calculate using the relevant estimate method.</p></article>
+  </section>
+</main>
+<footer class="footer"><span>© <span id="year"></span> <strong>current.calc</strong> · Independent calculator</span><span>Not affiliated with TANGEDCO / TNEB. Verify current official tariffs.</span></footer>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const unitsInput = $('units');
+  const homeMode = $('homeMode'), shopMode = $('shopMode'), reverseMode = $('reverseMode');
+  const shopFields = $('shopFields'), reverseFields = $('reverseFields');
+  const shopRate = $('shopRate'), fixedCharge = $('fixedCharge');
+  const reverseCategory = $('reverseCategory'), paidAmount = $('paidAmount');
+  const reverseShopRate = $('reverseShopRate'), reverseExtra = $('reverseExtra');
+  const reverseShopRateWrap = $('reverseShopRateWrap'), reverseExtraWrap = $('reverseExtraWrap');
+  const totalEl = $('total'), rowsEl = $('rows'), emptyEl = $('empty'), errorEl = $('error');
+  const summaryEl = $('summary'), noteText = $('noteText'), resultKicker = $('resultKicker');
+  const resultHeading = $('resultHeading'), calculateText = $('calculateText');
+  let mode = 'home';
+
+  $('year').textContent = new Date().getFullYear();
+  const money = n => '₹' + n.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+  const fmtUnits = n => n.toLocaleString('en-IN', {maximumFractionDigits:2});
+
+  function homeSlabs(units) {
+    // Illustrative demo rates transcribed from the reference screenshots, not an official tariff.
+    const slabs = units <= 500
+      ? [
+          {start:0,end:200,rate:0,label:'0–200 units',note:'First 200 units free'},
+          {start:200,end:400,rate:4.70,label:'201–400 units',note:'₹4.70 per unit'},
+          {start:400,end:500,rate:6.30,label:'401–500 units',note:'₹6.30 per unit'}
+        ]
+      : [
+          {start:0,end:100,rate:0,label:'0–100 units',note:'First 100 units free'},
+          {start:100,end:400,rate:4.70,label:'101–400 units',note:'₹4.70 per unit'},
+          {start:400,end:500,rate:6.30,label:'401–500 units',note:'₹6.30 per unit'},
+          {start:500,end:600,rate:8.40,label:'501–600 units',note:'₹8.40 per unit'},
+          {start:600,end:800,rate:9.45,label:'601–800 units',note:'₹9.45 per unit'},
+          {start:800,end:1000,rate:10.50,label:'801–1,000 units',note:'₹10.50 per unit'},
+          {start:1000,end:Infinity,rate:11.55,label:'Above 1,000 units',note:'₹11.55 per unit'}
+        ];
+    let bill = 0;
+    const rows = [];
+    for (const slab of slabs) {
+      const count = Math.max(0, Math.min(units, slab.end) - slab.start);
+      if (count <= 0) continue;
+      const amount = count * slab.rate;
+      bill += amount;
+      rows.push({label:slab.label,detail:slab.rate === 0 ? slab.note : `${fmtUnits(count)} units × ₹${slab.rate.toFixed(2)} per unit`,amount,free:slab.rate === 0});
+    }
+    return {bill, rows};
+  }
+
+  function reverseHome(amount) {
+    // Invert the same tiered model used by homeSlabs().
+    // At <=500 units the first 200 units are free; above 500 units,
+    // the reference model changes to first 100 units free. The cumulative
+    // energy charge at 500 units is the same in both cases (₹1,570).
+    let remaining = amount;
+    let totalUnits = 0;
+    const rows = [];
+
+    const bands = amount <= 1570
+      ? [
+          {capacity:200, rate:0, label:'0–200 units', free:true},
+          {capacity:200, rate:4.70, label:'201–400 units'},
+          {capacity:100, rate:6.30, label:'401–500 units'}
+        ]
+      : [
+          {capacity:100, rate:0, label:'0–100 units', free:true},
+          {capacity:300, rate:4.70, label:'101–400 units'},
+          {capacity:100, rate:6.30, label:'401–500 units'},
+          {capacity:100, rate:8.40, label:'501–600 units'},
+          {capacity:200, rate:9.45, label:'601–800 units'},
+          {capacity:200, rate:10.50, label:'801–1,000 units'},
+          {capacity:Infinity, rate:11.55, label:'Above 1,000 units'}
+        ];
+
+    for (const band of bands) {
+      if (band.rate === 0) {
+        totalUnits += band.capacity;
+        rows.push({
+          label: `Free units (${band.label})`,
+          detail: 'Assumed free in this demo tariff',
+          amount: band.capacity,
+          unitsResult: true,
+          free: true
+        });
+        continue;
+      }
+      if (remaining <= 0.000001) break;
+
+      const maxCharge = band.capacity * band.rate;
+      const charge = Math.min(remaining, maxCharge);
+      const bandUnits = charge / band.rate;
+      totalUnits += bandUnits;
+      rows.push({
+        label: band.label,
+        detail: `${fmtUnits(bandUnits)} paid units × ₹${band.rate.toFixed(2)} per unit = ${money(charge)}`,
+        amount: bandUnits,
+        unitsResult: true,
+        free: false
+      });
+      remaining -= charge;
+    }
+
+    const freeUnits = bands.filter(b => b.rate === 0).reduce((sum, b) => sum + b.capacity, 0);
+    const paidUnits = Math.max(0, totalUnits - freeUnits);
+    rows.push({
+      label: 'Total estimated units used',
+      detail: `${fmtUnits(freeUnits)} free units + ${fmtUnits(paidUnits)} paid units`,
+      amount: totalUnits,
+      unitsResult: true,
+      free: true
+    });
+    rows.push({
+      label: 'Bill amount entered',
+      detail: 'Assumed to be energy charges only; fixed charges, subsidies or adjustments can change the actual units',
+      amount,
+      free: false
+    });
+    return {units: totalUnits, rows};
+  }
+
+  function renderRows(items) {
+    rowsEl.replaceChildren();
+    items.forEach(item => {
+      const li = document.createElement('li'); li.className = 'row';
+      const left = document.createElement('div');
+      const label = document.createElement('div'); label.className = 'row-name'; label.textContent = item.label;
+      const detail = document.createElement('div'); detail.className = 'row-detail'; detail.textContent = item.detail;
+      left.append(label, detail);
+      const amount = document.createElement('div'); amount.className = 'row-amount' + (item.free ? ' free' : '');
+      amount.textContent = item.unitsResult ? `${fmtUnits(item.amount)} units` : (item.free ? 'FREE' : money(item.amount));
+      li.append(left, amount); rowsEl.append(li);
+    });
+    rowsEl.hidden = false; emptyEl.hidden = true;
+  }
+
+  function setMode(nextMode) {
+    mode = nextMode;
+    const isHome = mode === 'home', isShop = mode === 'shop', isReverse = mode === 'reverse';
+    homeMode.setAttribute('aria-pressed', String(isHome));
+    shopMode.setAttribute('aria-pressed', String(isShop));
+    reverseMode.setAttribute('aria-pressed', String(isReverse));
+    shopFields.hidden = !isShop;
+    reverseFields.hidden = !isReverse;
+    $('units').closest('.unit-field').hidden = isReverse;
+    $('units').closest('.unit-field').previousElementSibling.hidden = isReverse;
+    document.querySelector('.quick-label').hidden = isReverse;
+    document.querySelector('.quick-units').hidden = isReverse;
+    document.querySelector('.keypad').hidden = isReverse;
+    reverseShopRateWrap.hidden = !isReverse || reverseCategory.value !== 'shop';
+    reverseExtraWrap.hidden = !isReverse || reverseCategory.value !== 'shop';
+    resultKicker.textContent = isReverse ? 'UNITS ESTIMATE' : (isHome ? 'HOME ESTIMATE' : 'SHOP ESTIMATE');
+    resultHeading.textContent = isReverse ? 'Estimated units used' : 'Estimated bill';
+    calculateText.textContent = isReverse ? 'Convert bill to units' : 'Calculate my bill';
+    noteText.textContent = isReverse
+      ? "This estimate reverses the calculator's demo tariff. If your bill includes fixed charges, subsidies, taxes or adjustments, your actual units will differ."
+      : (isHome
+        ? 'Home slab rates are illustrative and based on the reference screenshots. Verify the current official tariff.'
+        : 'Shop estimate uses the rate and extra charges you enter. Commercial tariffs depend on your connection category.');
+    errorEl.textContent = '';
+    calculate();
+  }
+
+  function calculate() {
+    errorEl.textContent = '';
+    if (mode === 'reverse') {
+      const raw = paidAmount.value.trim(), amount = Number(raw);
+      if (raw === '' || !Number.isFinite(amount) || amount < 0 || amount > 100000000) {
+        errorEl.textContent = 'Enter a valid bill amount from ₹0 to ₹10 crore.'; return;
+      }
+      if (reverseCategory.value === 'shop') {
+        const rate = Number(reverseShopRate.value), extra = Number(reverseExtra.value);
+        if (reverseShopRate.value.trim() === '' || !Number.isFinite(rate) || rate <= 0 ||
+            reverseExtra.value.trim() === '' || !Number.isFinite(extra) || extra < 0 || amount < extra) {
+          errorEl.textContent = 'Enter a valid shop rate and other charges.'; return;
+        }
+        const units = (amount - extra) / rate;
+        totalEl.textContent = `${fmtUnits(units)} units`;
+        summaryEl.textContent = `${money(amount)} bill entered`;
+        renderRows([
+          {label:'Bill amount entered',detail:'Total amount paid',amount,free:false},
+          {label:'Other charges',detail:'Amount you entered',amount:extra,free:false},
+          {label:'Estimated paid units',detail:`(${money(amount)} − ${money(extra)}) ÷ ${money(rate)} per unit`,amount:units,unitsResult:true,free:true}
+        ]);
+      } else {
+        const result = reverseHome(amount);
+        totalEl.textContent = `${fmtUnits(result.units)} units`;
+        summaryEl.textContent = `${money(amount)} bill entered`;
+        renderRows(result.rows);
+      }
+      return;
+    }
+
+    const raw = unitsInput.value.trim(), units = Number(raw);
+    if (raw === '' || !Number.isFinite(units) || units < 0 || units > 10000000) {
+      totalEl.textContent = '₹0.00'; summaryEl.textContent = 'Waiting for units';
+      rowsEl.hidden = true; emptyEl.hidden = false;
+      if (raw !== '') errorEl.textContent = 'Enter a valid unit value from 0 to 10,000,000.';
+      return;
+    }
+    if (mode === 'home') {
+      const result = homeSlabs(units);
+      totalEl.textContent = money(result.bill);
+      summaryEl.textContent = `${fmtUnits(units)} units`;
+      renderRows(result.rows);
+    } else {
+      const rate = Number(shopRate.value), extra = Number(fixedCharge.value);
+      if (shopRate.value.trim() === '' || !Number.isFinite(rate) || rate < 0 || rate > 100000 ||
+          fixedCharge.value.trim() === '' || !Number.isFinite(extra) || extra < 0 || extra > 10000000) {
+        errorEl.textContent = 'Enter valid shop rate and extra charges (zero is allowed).'; return;
+      }
+      const energy = units * rate;
+      totalEl.textContent = money(energy + extra);
+      summaryEl.textContent = `${fmtUnits(units)} units`;
+      const items = [{label:'Energy charges',detail:`${fmtUnits(units)} units × ${money(rate)} per unit`,amount:energy,free:false}];
+      if (extra > 0) items.push({label:'Extra charges',detail:'Amount entered by you',amount:extra,free:false});
+      renderRows(items);
+    }
+  }
+
+  function clearInput() {
+    unitsInput.value = ''; errorEl.textContent = '';
+    totalEl.textContent = '₹0.00'; summaryEl.textContent = 'Waiting for units';
+    rowsEl.replaceChildren(); rowsEl.hidden = true; emptyEl.hidden = false;
+    document.querySelectorAll('[data-quick]').forEach(b => b.classList.remove('active'));
+    unitsInput.focus();
+  }
+
+  homeMode.addEventListener('click', () => setMode('home'));
+  shopMode.addEventListener('click', () => setMode('shop'));
+  reverseMode.addEventListener('click', () => setMode('reverse'));
+  reverseCategory.addEventListener('change', () => {
+    reverseShopRateWrap.hidden = reverseCategory.value !== 'shop';
+    reverseExtraWrap.hidden = reverseCategory.value !== 'shop';
+    calculate();
+  });
+  document.querySelectorAll('[data-quick]').forEach(btn => btn.addEventListener('click', () => {
+    unitsInput.value = btn.dataset.quick;
+    document.querySelectorAll('[data-quick]').forEach(b => b.classList.toggle('active', b === btn));
+    calculate();
+  }));
+  document.querySelectorAll('[data-key]').forEach(btn => btn.addEventListener('click', () => {
+    if (mode === 'reverse') return;
+    const key = btn.dataset.key;
+    if (key === '.' && unitsInput.value.includes('.')) return;
+    unitsInput.value = (unitsInput.value || '') + key;
+    document.querySelectorAll('[data-quick]').forEach(b => b.classList.remove('active'));
+    errorEl.textContent = ''; unitsInput.focus();
+  }));
+  document.querySelectorAll('[data-action]').forEach(btn => btn.addEventListener('click', () => {
+    if (btn.dataset.action === 'backspace') { unitsInput.value = unitsInput.value.slice(0,-1); errorEl.textContent = ''; unitsInput.focus(); }
+    else clearInput();
+  }));
+  $('calculate').addEventListener('click', calculate);
+  unitsInput.addEventListener('input', () => {
+    errorEl.textContent = '';
+    document.querySelectorAll('[data-quick]').forEach(b => b.classList.toggle('active', Number(b.dataset.quick) === Number(unitsInput.value)));
+  });
+  [unitsInput, shopRate, fixedCharge, paidAmount, reverseShopRate, reverseExtra].forEach(el => el.addEventListener('keydown', e => {
+    if (e.key === 'Enter') calculate();
+    if (e.key === 'Escape') clearInput();
+  }));
+  [shopRate, fixedCharge, paidAmount, reverseShopRate, reverseExtra].forEach(el => el.addEventListener('input', () => {
+    if (mode === 'shop' || mode === 'reverse') calculate();
+  }));
+})();
+</script>
+</body>
+</html>
